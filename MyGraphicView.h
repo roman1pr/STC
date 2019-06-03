@@ -29,12 +29,16 @@ private:
     int WidgetWidth;
     int WidgetHeight;
 
+    double zoomValue;
+    double curZoomValue;
+
 private:
 
     void resizeEvent(QResizeEvent *event);
     void wheelEvent(QWheelEvent *event);
 
     void drawPoints();
+    void drawMarks();
     void drawGrid();
     void drawGridInfo(QString text, QPointF pos);
 

@@ -4,6 +4,7 @@
 #include <QXmlStreamReader>
 #include <QDebug>
 #include <QtXml>
+#include <QDataStream>
 
 #include "DataStorage.h"
 
@@ -13,7 +14,13 @@ DataReader::DataReader()
 }
 
 void DataReader::parseReadFile(QString fileName){
-   readFileMarksXML(openFile(fileName));
+
+    if (fileName.contains(".xml")){
+        readFileMarksXML(openFile(fileName));
+    } else {
+        readPoints(openFile(fileName));
+    }
+
 }
 
 QFile* DataReader::openFile(QString fileName){
@@ -33,6 +40,7 @@ QFile* DataReader::openFile(QString fileName){
 }
 
 void DataReader::readFileMarksXML(QFile* file){
+
     if (file) {
         QDomDocument doc;
 
@@ -62,10 +70,10 @@ void DataReader::readMarks(const QDomNode &node) {
             if (!domElement.isNull()){
                 if (domElement.tagName() == "Point"){
 
-                    auto X = domElement.attributeNode("X").value().toFloat();
-                    auto Y = domElement.attributeNode("Y").value().toFloat();
+                    auto x = domElement.attributeNode("X").value().toDouble();
+                    auto y = domElement.attributeNode("Y").value().toDouble();
 
-                    _DataStorage->Marks.push_back(Point2D{X, Y});
+                    _DataStorage->Marks.push_back(Point2D{x, y});
                 }
             }
         }
@@ -75,17 +83,34 @@ void DataReader::readMarks(const QDomNode &node) {
 }
 
 void DataReader::readPoints(QFile* file){
-    QBitArray *ba = new QBitArray(100, false);
 
-    file = new QFile("out");
-    if (!file->open(QIODevice::WriteOnly)) {
-        qDebug() << "Can not create file";
-    return;
-    }
+    if (!file)
+        return;
 
-    QDataStream *outstream = new QDataStream(file);
+    QDataStream dataStream(file);
+    dataStream.setByteOrder(QDataStream::LittleEndian);
 
-    *outstream << *ba;
+    int XY = 0;
+    qint16 x = 0;
+    qint16 y = 0;
+
+    while ( !dataStream.atEnd() ) {
+
+            // Pop off a 32 bit int
+            qint16 temp;
+            dataStream >> temp;
+
+            if (XY == 0) {
+                x = temp;
+            } else {
+                y = temp;
+                _DataStorage->pushPoint(Point2D{(double)x , (double)y  });
+            }
+
+            XY = (XY + 1) % 2;
+        }
+
+    file->close();
 }
 
 void DataReader::showErrorMessage(QString title, QString Text){

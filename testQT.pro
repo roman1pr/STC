@@ -25,6 +25,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         DataReader.cpp \
+        DataReaderWorker.cpp \
         DataStorage.cpp \
         MyGraphicView.cpp \
         main.cpp \
@@ -32,6 +33,7 @@ SOURCES += \
 
 HEADERS += \
         DataReader.h \
+        DataReaderWorker.h \
         DataStorage.h \
         MyGraphicView.h \
         Point2d.h \

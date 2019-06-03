@@ -28,6 +28,9 @@ MyGraphicView::MyGraphicView(QWidget *parent)
     Scene->addItem(BaseGroup);
     Scene->addItem(PointsGroup);
 
+    zoomValue = 1;
+    curZoomValue = 1;
+
 }
 
 MyGraphicView::~MyGraphicView()
@@ -45,6 +48,8 @@ void MyGraphicView::wheelEvent(QWheelEvent *event){
     double angle = event->angleDelta().y();
     double factor = std::pow(1.001, angle);
 
+    curZoomValue *= factor;
+
     auto targetViewportPos = event->pos();
     auto targetScenePos = mapToScene(event->pos());
 
@@ -53,17 +58,40 @@ void MyGraphicView::wheelEvent(QWheelEvent *event){
     QPointF deltaViewportPos = targetViewportPos - QPointF(viewport()->width() / 2.0, viewport()->height() / 2.0);
     QPointF viewportCenter = mapFromScene(targetScenePos) - deltaViewportPos;
     centerOn(mapToScene(viewportCenter.toPoint()));
+
+    //Need to reDraw with zoom level?
+    if (std::abs(curZoomValue - zoomValue) > 1) {
+        zoomValue = curZoomValue;
+        drawScene();
+    }
 }
 
-
-
 void MyGraphicView::drawPoints(){
-    double pointSize = 4;
+    double pointSize = 1 / zoomValue * 20;
+
+    int drawCount = 16000;
+    int index = 0;
+
+    for (int i = 0; i < std::min(drawCount, _DataStorage->getPointsSize()); i++){
+        auto point = _DataStorage->getPoint(i);
+
+        double pointSceneX = point.X + WidgetWidth / 2.0;
+        double pointSceneY = point.Y + WidgetHeight / 2.0;
+
+        PointsGroup->addToGroup(Scene->addEllipse(pointSceneX, pointSceneY, pointSize, pointSize, QPen(Qt::green), QBrush(Qt::SolidPattern)));
+
+        index++;
+    }
+
+}
+
+void MyGraphicView::drawMarks(){
+    double pointSize = 1 / zoomValue;
 
     for (auto point : _DataStorage->Marks) {
 
-        float pointSceneX = point.X + WidgetWidth / 2.0f;
-        float pointSceneY = point.Y + WidgetHeight / 2.0f;
+        double pointSceneX = point.X + WidgetWidth / 2.0;
+        double pointSceneY = point.Y + WidgetHeight / 2.0;
 
         PointsGroup->addToGroup(Scene->addLine(pointSceneX - pointSize, pointSceneY, pointSceneX + pointSize, pointSceneY, QPen(Qt::red)));
         PointsGroup->addToGroup(Scene->addLine(pointSceneX, pointSceneY - pointSize, pointSceneX, pointSceneY + pointSize, QPen(Qt::red)));
@@ -72,8 +100,8 @@ void MyGraphicView::drawPoints(){
 
 void MyGraphicView::drawGrid(){
 
-    int stepWidth = WidgetWidth / (10 * 2);
-    int stepHeight = WidgetHeight / (10 * 2);
+    int stepWidth = WidgetWidth / (10);
+    int stepHeight = WidgetHeight / (10);
 
     // Vertical lines
     for (int x=0; x<= WidgetWidth; x+=stepWidth){
@@ -121,13 +149,14 @@ void MyGraphicView::drawScene()
     this->deleteItemsFromGroup(BaseGroup);
     this->deleteItemsFromGroup(PointsGroup);
 
-    WidgetWidth = this->width();
-    WidgetHeight = this->height();
+    WidgetWidth = this->width() * 10;
+    WidgetHeight = this->height() * 10;
 
     Scene->setSceneRect(0, 0, WidgetWidth, WidgetHeight);
 
     drawGrid();
     drawPoints();
+    drawMarks();
 }
 
 void MyGraphicView::resizeEvent(QResizeEvent *event)

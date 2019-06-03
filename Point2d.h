@@ -3,8 +3,8 @@
 
 struct Point2D{
 
-    float X;
-    float Y;
+    double X;
+    double Y;
 };
 
 #endif // POINT2D_H
