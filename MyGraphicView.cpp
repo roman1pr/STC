@@ -1,13 +1,17 @@
 #include "MyGraphicView.h"
-#include <QDebug>
 #include <cmath>
 
 #include "DataStorage.h"
 
-MyGraphicView::MyGraphicView(QWidget *parent)
-    : QGraphicsView(parent)
-{
+#define GRID_NUM_MULTIPLIER 10
+#define SCENE_SIZE_MULTIPLIER 10
 
+
+MyGraphicView::MyGraphicView(QWidget *parent)
+    : QGraphicsView(parent),
+      ZoomValue(1),
+      CurZoomValue(1)
+{
     /* Widget View settings */
     this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -16,7 +20,6 @@ MyGraphicView::MyGraphicView(QWidget *parent)
 
     this->setMinimumHeight(100);
     this->setMinimumWidth(100);
-
 
     /* Scene settings */
     Scene = new QGraphicsScene();
@@ -27,10 +30,6 @@ MyGraphicView::MyGraphicView(QWidget *parent)
 
     Scene->addItem(BaseGroup);
     Scene->addItem(PointsGroup);
-
-    zoomValue = 1;
-    curZoomValue = 1;
-
 }
 
 MyGraphicView::~MyGraphicView()
@@ -38,17 +37,18 @@ MyGraphicView::~MyGraphicView()
 
 }
 
-void MyGraphicView::setDataStorage(DataStorage *storage){
+void MyGraphicView::setDataStorage(DataStorage *storage)
+{
     _DataStorage = storage;
 }
 
-void MyGraphicView::wheelEvent(QWheelEvent *event){
-
+void MyGraphicView::wheelEvent(QWheelEvent *event)
+{
     // Do a wheel-based zoom about the cursor position
     double angle = event->angleDelta().y();
     double factor = std::pow(1.001, angle);
 
-    curZoomValue *= factor;
+    CurZoomValue *= factor;
 
     auto targetViewportPos = event->pos();
     auto targetScenePos = mapToScene(event->pos());
@@ -60,14 +60,15 @@ void MyGraphicView::wheelEvent(QWheelEvent *event){
     centerOn(mapToScene(viewportCenter.toPoint()));
 
     //Need to reDraw with zoom level?
-    if (std::abs(curZoomValue - zoomValue) > 1) {
-        zoomValue = curZoomValue;
+    if (std::abs(CurZoomValue / ZoomValue) > 2) {
+        ZoomValue = CurZoomValue;
         drawScene();
     }
 }
 
-void MyGraphicView::drawPoints(){
-    double pointSize = 1 / zoomValue * 20;
+void MyGraphicView::drawPoints()
+{
+    double pointSize = 20 / ZoomValue;
 
     int drawCount = 16000;
     int index = 0;
@@ -85,8 +86,9 @@ void MyGraphicView::drawPoints(){
 
 }
 
-void MyGraphicView::drawMarks(){
-    double pointSize = 1 / zoomValue;
+void MyGraphicView::drawMarks()
+{
+    double pointSize = 1 / ZoomValue;
 
     for (auto point : _DataStorage->Marks) {
 
@@ -98,13 +100,15 @@ void MyGraphicView::drawMarks(){
     }
 }
 
-void MyGraphicView::drawGrid(){
+void MyGraphicView::drawGrid()
+{
+    int stepWidth = WidgetWidth / GRID_NUM_MULTIPLIER;
+    int stepHeight = WidgetHeight / GRID_NUM_MULTIPLIER;
 
-    int stepWidth = WidgetWidth / (10);
-    int stepHeight = WidgetHeight / (10);
+    double pointSize = 1 / ZoomValue;
 
     // Vertical lines
-    for (int x=0; x<= WidgetWidth; x+=stepWidth){
+    for (int x = 0; x <= WidgetWidth; x += stepWidth){
         BaseGroup->addToGroup(Scene->addLine(x, 0, x, WidgetHeight, QPen(Qt::gray)));
 
         int showValue = x - WidgetWidth / 2;
@@ -112,12 +116,12 @@ void MyGraphicView::drawGrid(){
         if ((abs(showValue) > 10)){
             drawGridInfo(QString::number(showValue), QPointF(x, WidgetHeight / 2));
         } else {
-            BaseGroup->addToGroup(Scene->addLine(x, 0, x, WidgetHeight, QPen(Qt::black)));
+            BaseGroup->addToGroup(Scene->addLine(x, 0, x, WidgetHeight, QPen(QBrush(Qt::SolidPattern), 5 / ZoomValue)));
         }
     }
 
     // Horizontal lines
-    for (int y=0; y<=WidgetHeight; y+=stepHeight){
+    for (int y = 0; y <= WidgetHeight; y += stepHeight){
         BaseGroup->addToGroup(Scene->addLine(0, y, WidgetWidth, y, QPen(Qt::gray)));
 
         int showValue = (y - WidgetHeight / 2) * -1;
@@ -125,16 +129,17 @@ void MyGraphicView::drawGrid(){
         if ((abs(showValue) > 10)){
             drawGridInfo(QString::number(showValue), QPointF(WidgetWidth / 2, y));
         } else {
-            BaseGroup->addToGroup(Scene->addLine(0, y, WidgetWidth, y,  QPen(Qt::black)));
+            BaseGroup->addToGroup(Scene->addLine(0, y, WidgetWidth, y, QPen(QBrush(Qt::SolidPattern), 5 / ZoomValue)));
         }
     }
 
-
     drawGridInfo("0", QPointF(WidgetWidth / 2, WidgetHeight / 2));
-
+    drawGridInfo("X", QPointF(WidgetWidth, WidgetHeight / 2 - 10));
+    drawGridInfo("Y", QPointF(WidgetWidth / 2 - 10, 0));
 }
 
-void MyGraphicView::drawGridInfo(QString text, QPointF pos){
+void MyGraphicView::drawGridInfo(QString text, QPointF pos)
+{
 
     QGraphicsTextItem * textItem = new QGraphicsTextItem;
     textItem->setPos(pos);
@@ -143,14 +148,13 @@ void MyGraphicView::drawGridInfo(QString text, QPointF pos){
     BaseGroup->addToGroup(textItem);
 }
 
-
 void MyGraphicView::drawScene()
 {
     this->deleteItemsFromGroup(BaseGroup);
     this->deleteItemsFromGroup(PointsGroup);
 
-    WidgetWidth = this->width() * 10;
-    WidgetHeight = this->height() * 10;
+    WidgetWidth = this->width() * SCENE_SIZE_MULTIPLIER;
+    WidgetHeight = this->height() * SCENE_SIZE_MULTIPLIER;
 
     Scene->setSceneRect(0, 0, WidgetWidth, WidgetHeight);
 
@@ -162,7 +166,7 @@ void MyGraphicView::drawScene()
 void MyGraphicView::resizeEvent(QResizeEvent *event)
 {
     drawScene();
-    QGraphicsView::resizeEvent(event);  // Запускаем событие родителького класса
+    QGraphicsView::resizeEvent(event);
 }
 
 void MyGraphicView::deleteItemsFromGroup(QGraphicsItemGroup *group)

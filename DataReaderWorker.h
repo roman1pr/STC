@@ -3,15 +3,14 @@
 
 #include <QObject>
 
-class DataStorage;
 class DataReader;
 
 class DataReaderWorker : public QObject
 {
+    Q_OBJECT
 public:
     DataReaderWorker();
 
-    void setDataStorage(DataStorage *storage);
     void setDataReader(DataReader *reader);
 
 public slots:
@@ -20,7 +19,6 @@ signals:
     void send(int);
 
 private:
-    DataStorage* _DataStorage;
     DataReader*  _DataReader;
 };
 

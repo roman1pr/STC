@@ -4,7 +4,6 @@
 #include <QMainWindow>
 
 #include <mygraphicview.h>
-#include <QVector>
 
 class DataStorage;
 
@@ -22,7 +21,7 @@ public:
 
     void setDataStorage(DataStorage *storage);
 
-
+    void addThread();
 private:
     Ui::MainWindow *ui;
     MyGraphicView   *GraphicView;     // Наш кастомный виджет

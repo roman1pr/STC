@@ -2,7 +2,6 @@
 
 #include <QMessageBox>
 #include <QXmlStreamReader>
-#include <QDebug>
 #include <QtXml>
 #include <QDataStream>
 
@@ -13,21 +12,20 @@ DataReader::DataReader()
 
 }
 
-void DataReader::parseReadFile(QString fileName){
-
+void DataReader::parseReadFile(QString fileName)
+{
     if (fileName.contains(".xml")){
         readFileMarksXML(openFile(fileName));
     } else {
         readPoints(openFile(fileName));
     }
-
 }
 
-QFile* DataReader::openFile(QString fileName){
+QFile* DataReader::openFile(QString fileName)
+{
+    auto File = new QFile(fileName);
 
-    auto xmlFile = new QFile(fileName);
-
-    if (!xmlFile->exists() || !xmlFile->open(QIODevice::ReadOnly | QIODevice::Text)) {
+    if (!File->exists() || !File->open(QIODevice::ReadOnly | QIODevice::Text)) {
 
         showErrorMessage("Load XML File Problem",
                          "Couldn't open " + fileName + " to load settings for download"
@@ -36,11 +34,11 @@ QFile* DataReader::openFile(QString fileName){
         return nullptr;
     }
 
-    return xmlFile;
+    return File;
 }
 
-void DataReader::readFileMarksXML(QFile* file){
-
+void DataReader::readFileMarksXML(QFile* file)
+{
     if (file) {
         QDomDocument doc;
 
@@ -53,8 +51,8 @@ void DataReader::readFileMarksXML(QFile* file){
     }
 }
 
-void DataReader::readMarks(const QDomNode &node) {
-
+void DataReader::readMarks(const QDomNode &node)
+{
     if (!_DataStorage) {
         showErrorMessage("DataStorage Problem",
                          "DataStorage not init or not set in DataReader, before read points need to set DataStorage!!!"
@@ -82,8 +80,8 @@ void DataReader::readMarks(const QDomNode &node) {
     }
 }
 
-void DataReader::readPoints(QFile* file){
-
+void DataReader::readPoints(QFile* file)
+{
     if (!file)
         return;
 
@@ -113,7 +111,8 @@ void DataReader::readPoints(QFile* file){
     file->close();
 }
 
-void DataReader::showErrorMessage(QString title, QString Text){
+void DataReader::showErrorMessage(QString title, QString Text)
+{
     QMessageBox msgBox;
     msgBox.setWindowTitle(title);
     msgBox.setText(Text);
@@ -121,6 +120,7 @@ void DataReader::showErrorMessage(QString title, QString Text){
 }
 
 
-void DataReader::setDataStorage(DataStorage* storage){
+void DataReader::setDataStorage(DataStorage* storage)
+{
     _DataStorage = storage;
 }

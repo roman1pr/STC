@@ -18,7 +18,8 @@ Point2D DataStorage::getPoint(int i)
     return Points.at(i);
 }
 
-int DataStorage::getPointsSize(){
+int DataStorage::getPointsSize()
+{
     QMutexLocker locker (&m_mutex);
     return Points.size();
 }

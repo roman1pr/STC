@@ -6,7 +6,6 @@
 #include <QGraphicsView>
 #include <QGraphicsScene>
 #include <QGraphicsItemGroup>
-#include <QTimer>
 #include <QWheelEvent>
 
 class DataStorage;
@@ -29,8 +28,8 @@ private:
     int WidgetWidth;
     int WidgetHeight;
 
-    double zoomValue;
-    double curZoomValue;
+    double ZoomValue;
+    double CurZoomValue;
 
 private:
 

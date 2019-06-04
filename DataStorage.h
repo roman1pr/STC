@@ -3,7 +3,6 @@
 
 #include "point2d.h"
 #include <QVector>
-#include <QStack>
 #include <QMutex>
 
 class DataStorage
